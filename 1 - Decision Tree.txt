@@ -1,0 +1,71 @@
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv('./play_tennis.csv')
+
+def entropy(column):
+    counts = column.value_counts()
+    probabilities = counts / len(column)
+    return -np.sum(probabilities * np.log2(probabilities))
+
+
+def information_gain(data, feature, target):
+    total_entropy = entropy(data[target])
+    feature_entropy = 0
+    for value in data[feature].unique():
+        subset = data[data[feature] == value]
+        feature_entropy += (len(subset) / len(data)) * entropy(subset[target])
+    return total_entropy - feature_entropy
+
+# Function to find the best feature based on information gain
+def best_feature(data, features, target):
+    gains = {feature: information_gain(data, feature, target) for feature in features}
+    return max(gains, key=gains.get)
+
+# Recursive function to build the decision tree
+def build_tree(data, features, target):
+    classes = data[target].unique()
+    
+    # Base case 1: If all data points belong to the same class
+    if len(classes) == 1:
+        return classes[0]
+    
+    # Base case 2: If no more features to split on
+    if len(features)==0:
+        return data[target].mode()[0]
+    
+    # Find the best feature to split on
+    best = best_feature(data, features, target)
+    tree = {best: {}}
+    
+    # Recursively build the tree for each value of the best feature
+    for value in data[best].unique():
+        subset = data[data[best] == value]
+        new_features = [f for f in features if f != best]
+        tree[best][value] = build_tree(subset, new_features, target)
+    
+    return tree
+
+df = df.drop(['day'],axis=1)
+x = df.drop(['play'],axis=1)
+
+features = x.columns
+target = 'play'
+decision_tree = build_tree(df, features, target)
+print("Decision Tree:")
+print(decision_tree)
+
+def classify(tree, sample):
+ if not isinstance(tree, dict):
+     return tree
+ feature = list(tree.keys())[0]
+ feature_value = sample[feature]
+ subtree = tree[feature].get(feature_value)
+ if subtree is None:
+     return None
+ return classify(subtree, sample)
+    
+# New sample
+new_sample = {'outlook': 'Sunny', 'Temperature': 'Cool', 'humidity': 'High', 'Wind': False}
+classification = classify(decision_tree, new_sample)
+print(f"Classification for new sample: {classification}")

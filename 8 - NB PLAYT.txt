@@ -1,0 +1,36 @@
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+df = pd.read_csv("./play_tennis.csv")
+# df = df.drop('day',axis=1)
+df.head()
+
+X = df.drop('play',axis=1)
+y = df['play']
+
+le_outlook = LabelEncoder()
+X['outlook'] = le_outlook.fit_transform(X['outlook'])
+
+le_temp = LabelEncoder()
+X['temp'] = le_temp.fit_transform(X['temp'])
+
+le_hum = LabelEncoder()
+X['humidity'] = le_hum.fit_transform(X['humidity'])
+
+le_win = LabelEncoder()
+X['wind'] = le_win.fit_transform(X['wind'])
+
+le_play = LabelEncoder()
+y = le_play.fit_transform(y)
+
+x_train,x_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
+
+model = GaussianNB()
+model.fit(x_train,y_train)
+
+pred = model.predict(x_test)
+acc = accuracy_score(pred,y_test)
+print(acc)
